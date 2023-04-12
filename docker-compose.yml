@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "3532:5432"
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=rollout
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: bitnami/redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
+  web:
+    image: rollouthq/web:latest
+    # restart: always
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./:/home/node/app/project
+      - /Users/jozefmikulas/dev/rollout-embed/packages:/home/node/app/packages
+    environment:
+      - ROLLOUT_APP_HOST_URL=http://host.docker.internal:3002
+      - ROLLOUT_APP_PUBLIC_URL=http://localhost:3002
+      - ROLLOUT_SECRETS_URL=http://host.docker.internal:3000/v1
+      - ROLLOUT_PG_URL=postgresql://root@postgres:5432/rollout?schema=public
+      - REDIS_URL=redis://redis:6379
+
+  # events:
+  #   image: rollouthq/events:latest
+  #   restart: always
+  #   ports:
+  #     - "3502:3500"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./:/home/node/app/project
+  #     - /Users/jozefmikulas/dev/rollout-embed/packages:/home/node/app/packages
+  #   environment:
+  #     - ROLLOUT_APP_PUBLIC_URL=http://localhost:3002
+  #     - ROLLOUT_APP_URL=http://web:3000
+  #     - ROLLOUT_PG_URL=postgresql://root@postgres:5432/rollout?schema=public
+  #     - REDIS_URL=redis://redis:6379
+  #   entrypoint: yarn events:dev
